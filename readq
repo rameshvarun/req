@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+import sys
+import requests
+import uuid
+import yaml
+import datetime
+import click
+import secrets
+
+from pathlib import Path
+from typing import *
+
+from importers import pocket_import
+
+'''config = yaml.load(open(Path.home() / '.readq'))
+DATA_FOLDER = config['data_folder']
+'''
+
+class Entry:
+    def __init__(self, id: Optional[str], time_added, read: bool, title: str, type: str,
+            url: str, summary: str = "", notes: str = "", tags: List[str] = []) -> None:
+        self.id = id or secrets.token_hex(6)
+
+        self.title = title
+        self.url = url
+
+        self.time_added = time_added
+        self.tags = tags
+        self.summary = summary
+        self.notes = notes
+
+def youtube_extractor(url: str, res):
+    pass
+
+extractors = []
+
+@click.group()
+def cli():
+    pass
+
+@click.command()
+@click.argument('url')
+def save(url: str):
+    pass
+
+@click.group()
+def cli(): pass
+cli.add_command(pocket_import)
+cli.add_command(save)
+
+if __name__ == '__main__':
+    cli()
