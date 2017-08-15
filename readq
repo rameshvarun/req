@@ -20,6 +20,10 @@ from typing import *
 @click.argument('urls', nargs=-1)
 def save(urls: List[str]):
     """Save URLs to read later."""
+
+    if len(urls) == 0:
+        raise click.BadParameter("No urls provided.")
+
     for url in urls:
         res = requests.get(url)
         extracted = [e(res) for e in extractors]
@@ -73,8 +77,9 @@ def mark(handle):
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
-     if ctx.invoked_subcommand is None:
-         list_unread()
+    print(ctx)
+    if ctx.invoked_subcommand is None:
+        list_unread()
 
 cli.add_command(pocket_import)
 cli.add_command(save)
