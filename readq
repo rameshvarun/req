@@ -14,16 +14,19 @@ from operator import attrgetter
 from urlifiers import urlify
 
 from datetime import timedelta
+from typing import *
 
 @click.command()
-@click.argument('url')
-def save(url: str):
-    res = requests.get(url)
-    extracted = [e(res) for e in extractors]
-    extracted = [e for e in extracted if e is not None]
-    entry = max(extracted, key=lambda e: len(e.resource_type.split('/')))
-    entry.save()
-    print(f"Saved with handle {entry.handle}.")
+@click.argument('urls', nargs=-1)
+def save(urls: List[str]):
+    """Save URLs to read later."""
+    for url in urls:
+        res = requests.get(url)
+        extracted = [e(res) for e in extractors]
+        extracted = [e for e in extracted if e is not None]
+        entry = max(extracted, key=lambda e: len(e.resource_type.split('/')))
+        entry.save()
+        print(f"{url} saved with handle {entry.handle}.")
 
 def print_entry(entry):
     if entry.title:
@@ -56,17 +59,23 @@ def archive():
 @click.command("edit")
 @click.argument('handle')
 def edit(handle):
+    """Edit an articles YAML file."""
     click.edit(filename=DATA_FOLDER / f"{handle}.yml")
 
 @click.command("mark")
 @click.argument('handle')
 def mark(handle):
+    """Mark an article as read."""
     entry = load_entry(DATA_FOLDER / f"{handle}.yml")
     entry.read = True
     entry.save()
 
-@click.group()
-def cli(): pass
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+     if ctx.invoked_subcommand is None:
+         list_unread()
+
 cli.add_command(pocket_import)
 cli.add_command(save)
 cli.add_command(list_unread)

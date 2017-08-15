@@ -10,15 +10,15 @@ def pdf_extractor(res):
         return Entry(res.url, 'web/pdf')
 
 def webpage_extractor(res):
-
-    title, summary = None, None
+    title, summary, url = None, None, res.url
 
     article = parser.parse_article(res.url)
     if article:
         data = article.json()
         if 'title' in data: title = data['title']
         if 'excerpt' in data: summary = data['excerpt']
+        if 'url' in data: url = data['url']
 
-    return Entry(res.url, 'web', title=title, summary=summary)
+    return Entry(url, 'web', title=title, summary=summary)
 
 extractors = [pdf_extractor, webpage_extractor]
