@@ -4,6 +4,8 @@ from enum import Enum, auto
 from html.parser import HTMLParser
 from collections import namedtuple
 
+from entry import Entry
+
 from datetime import datetime
 
 @click.command('pocket-import')
@@ -37,7 +39,7 @@ def pocket_import(file):
                 if tag == 'ul': self.state = PocketParserState.UNREAD_LIST
             elif self.state == PocketParserState.UNREAD_LIST:
                 if tag == 'a': self.state = PocketParserState.UNREAD_LINK
-            elif tag == 'ul': self.state = PocketParserState.READ_LIST
+                elif tag == 'ul': self.state = PocketParserState.READ_LIST
             elif self.state == PocketParserState.READ_LIST:
                 if tag == 'a': self.state = PocketParserState.READ_LINK
 
@@ -61,3 +63,8 @@ def pocket_import(file):
 
     parser = PocketHTMLParser()
     parser.feed(file.read().decode())
+
+    for pr in pocket_results:
+        entry = Entry(pr.url, 'web', title=pr.title, tags=pr.tags,
+            read=pr.read, time_added=pr.time_added)
+        entry.save()

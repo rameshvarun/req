@@ -1,52 +1,78 @@
 #!/usr/bin/env python3
 import sys
 import requests
-import uuid
-import yaml
-import datetime
 import click
-import secrets
 
-from pathlib import Path
-from typing import *
-
+from extractors import extractors
 from importers import pocket_import
 
-'''config = yaml.load(open(Path.home() / '.readq'))
-DATA_FOLDER = config['data_folder']
-'''
+from config import DATA_FOLDER
 
-class Entry:
-    def __init__(self, id: Optional[str], time_added, read: bool, title: str, type: str,
-            url: str, summary: str = "", notes: str = "", tags: List[str] = []) -> None:
-        self.id = id or secrets.token_hex(6)
+from entry import get_entries, load_entry
+from operator import attrgetter
 
-        self.title = title
-        self.url = url
+from urlifiers import urlify
 
-        self.time_added = time_added
-        self.tags = tags
-        self.summary = summary
-        self.notes = notes
-
-def youtube_extractor(url: str, res):
-    pass
-
-extractors = []
-
-@click.group()
-def cli():
-    pass
+from datetime import timedelta
 
 @click.command()
 @click.argument('url')
 def save(url: str):
-    pass
+    res = requests.get(url)
+    extracted = [e(res) for e in extractors]
+    extracted = [e for e in extracted if e is not None]
+    entry = max(extracted, key=lambda e: len(e.resource_type.split('/')))
+    entry.save()
+    print(f"Saved with handle {entry.handle}.")
+
+def print_entry(entry):
+    if entry.title:
+        print(f"{entry.handle} - {entry.title}")
+        print(f"URL: {urlify(entry)}")
+    else:
+        print(f"{entry.handle} - {urlify(entry)}")
+
+    if entry.summary:
+        print(f"Summary: {entry.summary}")
+
+@click.command("list")
+def list_unread():
+    entries = get_entries()
+    unread = sorted([e for e in entries if not e.read], key=attrgetter('time_added'), reverse=True)
+    print (f"===== {len(unread)} Unread Links =====")
+    for entry in unread:
+        print_entry(entry)
+        print("-----")
+
+@click.command("archive")
+def archive():
+    entries = get_entries()
+    read = sorted([e for e in entries if e.read], key=attrgetter('time_added'), reverse=True)
+    print (f"===== {len(read)} Read Links =====")
+    for entry in read:
+        print_entry(entry)
+        print("-----")
+
+@click.command("edit")
+@click.argument('handle')
+def edit(handle):
+    click.edit(filename=DATA_FOLDER / f"{handle}.yml")
+
+@click.command("mark")
+@click.argument('handle')
+def mark(handle):
+    entry = load_entry(DATA_FOLDER / f"{handle}.yml")
+    entry.read = True
+    entry.save()
 
 @click.group()
 def cli(): pass
 cli.add_command(pocket_import)
 cli.add_command(save)
+cli.add_command(list_unread)
+cli.add_command(edit)
+cli.add_command(mark)
+cli.add_command(archive)
 
 if __name__ == '__main__':
     cli()
