@@ -5,6 +5,7 @@ import click
 
 from extractors import extractors
 from importers import pocket_import
+from exporters import export
 
 from config import DATA_FOLDER
 
@@ -41,6 +42,9 @@ def print_entry(entry):
 
     if entry.summary:
         print(f"Summary: {entry.summary}")
+
+    if len(entry.tags) > 0:
+        print(f"Tags: {entry.tags}")
 
 @click.command("list")
 def list_unread():
@@ -86,6 +90,7 @@ cli.add_command(list_unread)
 cli.add_command(edit)
 cli.add_command(mark)
 cli.add_command(archive)
+cli.add_command(export)
 
 if __name__ == '__main__':
     cli()
