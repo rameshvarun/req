@@ -11,14 +11,24 @@ import time
 def pinboard(auth_token):
     """Export saved entries into Pinboard"""
 
+
+    existing_links = requests.get('https://api.pinboard.in/v1/posts/all', params={
+        'auth_token': auth_token,
+        'format': 'json',
+    }).json()
+    existing_links = set(link['href'] for link in existing_links)
+
     entries = get_entries()
+    unsynced_entries = [e for e in entries if urlify(e) not in existing_links]
+
+    print(f"{len(unsynced_entries)} entries to sync...")
 
     def show_item(entry):
         if entry == None:
             return ""
-        return entry.title or urlify(entry)
+        return (entry.title or urlify(entry))[:50]
 
-    with click.progressbar(entries, item_show_func=show_item, label='Exporting to Pinboard...') as bar:
+    with click.progressbar(unsynced_entries, item_show_func=show_item, label='Exporting to Pinboard...') as bar:
         for entry in bar:
             url = urlify(entry)
             title = entry.title or url
